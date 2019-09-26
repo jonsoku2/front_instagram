@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import AuthPresenter from './AuthPresenter';
 import useInput from '../../Hooks/useInput';
 import { useMutation } from 'react-apollo-hooks';
-import { LOG_IN, CREATE_ACCOUNT, CONFIRM_SECRET } from './AuthQueries';
+import { LOG_IN, CREATE_ACCOUNT, CONFIRM_SECRET, LOCAL_LOG_IN } from './AuthQueries';
 import { toast } from 'react-toastify';
 
 export default () => {
@@ -27,10 +27,12 @@ export default () => {
 
   const [confirmSecretMutation] = useMutation(CONFIRM_SECRET, {
     variables: {
-      email: secret.value,
+      email: email.value,
       secret: secret.value
     }
   });
+
+  const [localLogInMutation] = useMutation(LOCAL_LOG_IN);
 
   const onSubmit = async e => {
     e.preventDefault();
@@ -80,12 +82,19 @@ export default () => {
       if (secret.value !== '') {
         try {
           const {
-            data: { confirmSecret }
+            data: { confirmSecret: token }
           } = await confirmSecretMutation();
-          console.log(confirmSecret);
-          //To do log user in
+
+          console.log(token);
+          if (token !== '' && token !== undefined) {
+            localLogInMutation({
+              variables: { token }
+            });
+          } else {
+            throw Error();
+          }
         } catch {
-          toast.error("Can't confirm secret!");
+          toast.error("Can't confirm secret!, check again ~!");
         }
       }
     }
